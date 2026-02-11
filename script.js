@@ -1,56 +1,64 @@
 "use strict";
 
-function getSessionId() {
-  let id = localStorage.getItem("sid");
-  if (!id) {
-    id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
-    localStorage.setItem("sid", id);
-  }
-  return id;
-}
-
-async function track(ev) {
-  try {
-    await fetch("/.netlify/functions/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_id: getSessionId(),
-        event: ev,
-        page: location.pathname
-      })
-    });
-  } catch {}
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   const els = {
-    // Letter / Envelope
     envelope: document.getElementById("envelope"),
     sealBtn: document.getElementById("sealBtn"),
     envelopeHint: document.getElementById("envelopeHint"),
 
-    // Card / Game
     card: document.getElementById("card"),
     stage: document.getElementById("stage"),
     noBtn: document.getElementById("noBtn"),
     yesBtn: document.getElementById("yesBtn"),
     hint: document.getElementById("hint"),
 
-    // Video (shown FIRST after YES)
     videoOverlay: document.getElementById("videoOverlay"),
     valentineVideo: document.getElementById("valentineVideo"),
     skipVideoBtn: document.getElementById("skipVideoBtn"),
 
-    // Success overlay ("It's a date..." shown AFTER video close)
     overlay: document.getElementById("overlay"),
     closeOverlayBtn: document.getElementById("closeOverlayBtn"),
     burst: document.getElementById("burst"),
   };
 
+  /* -------------------- Tracking (Option C) -------------------- */
+  function getSessionId() {
+    let id = localStorage.getItem("sid");
+    if (!id) {
+      id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+      localStorage.setItem("sid", id);
+    }
+    return id;
+  }
+
+  function getClientTz() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function track(ev) {
+    try {
+      await fetch("/.netlify/functions/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: getSessionId(),
+          event: ev,
+          page: location.pathname,
+          client_time: new Date().toISOString(),  // ✅ device time
+          client_tz: getClientTz(),               // ✅ device timezone
+        }),
+      });
+    } catch {}
+  }
+
   /* -------------------- OPEN LETTER -> SHOW CARD -------------------- */
   function showCard() {
     if (!els.card) return;
+
     els.card.classList.remove("is-hidden");
 
     if (els.envelope) {
@@ -60,9 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => (els.envelope.style.display = "none"), 360);
     }
 
-    // Ensure NO starts in a safe position (not on top of YES)
     setTimeout(() => {
-      safeRandomNo();
+      if (els.noBtn && els.stage) safeRandomNo();
     }, 80);
   }
 
@@ -71,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
       els.envelope.classList.add("is-open");
       if (els.envelopeHint) els.envelopeHint.textContent = "Opening… 💞";
       setTimeout(showCard, 700);
+      track("letter_open");
     });
   }
 
@@ -141,12 +149,12 @@ document.addEventListener("DOMContentLoaded", () => {
       right: r.right - s.left,
       bottom: r.bottom - s.top,
       width: r.width,
-      height: r.height
+      height: r.height,
     };
   }
 
   /* -------------------- Place NO safely (never on YES) -------------------- */
-  const SAFE_PAD = 16; // extra distance between yes/no
+  const SAFE_PAD = 16;
 
   function placeNo(x, y) {
     const stageRect = els.stage.getBoundingClientRect();
@@ -172,7 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnW = Math.max(els.noBtn.offsetWidth, 120);
     const btnH = Math.max(els.noBtn.offsetHeight, 44);
 
-    // Try several times to find a position not overlapping YES
     for (let i = 0; i < 40; i++) {
       const x = 10 + Math.random() * (stageRect.width - btnW - 20);
       const y = 10 + Math.random() * (stageRect.height - btnH - 20);
@@ -181,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
         left: x,
         top: y,
         right: x + btnW,
-        bottom: y + btnH
+        bottom: y + btnH,
       };
 
       if (!rectsOverlap(noCandidate, yes, SAFE_PAD)) {
@@ -190,19 +197,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Fallback: force it to a corner far from YES
     placeNo(10, stageRect.height - btnH - 10);
   }
 
-  // Initial safe position (in case card is visible immediately)
   safeRandomNo();
 
-  /* -------------------- Evade logic (mouse + touch + tap on NO) -------------------- */
-  function safePlaceNear(nx, ny, approxW, approxH) {
-    // Place and ensure it doesn't overlap YES. If overlap -> random safe position.
+  /* -------------------- Evade logic -------------------- */
+  function safePlaceNear(nx, ny) {
     placeNo(nx, ny);
 
-    // After placing, verify overlap (using real rects)
     const noR = getRectInStage(els.noBtn);
     const yesR = getRectInStage(els.yesBtn);
 
@@ -227,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const dy = my - cy;
     const dist = Math.hypot(dx, dy);
 
-    const dangerRadius = 140; // a bit larger for touch
+    const dangerRadius = 140;
     if (dist < dangerRadius) {
       const push = 170;
       const angle = Math.atan2(dy, dx) + (Math.random() * 0.9 - 0.45);
@@ -238,36 +241,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const approxW = Math.max(els.noBtn.offsetWidth, 120);
       const approxH = Math.max(els.noBtn.offsetHeight, 44);
 
-      safePlaceNear(targetX - approxW / 2, targetY - approxH / 2, approxW, approxH);
+      safePlaceNear(targetX - approxW / 2, targetY - approxH / 2);
 
       lastMoveAt = performance.now();
       boostYesBecauseChase();
     }
   }
 
-  // Desktop mouse
   els.stage.addEventListener("mousemove", (e) => evadeFromPoint(e.clientX, e.clientY));
-
-  // Touch (finger in stage)
   els.stage.addEventListener("touchstart", (e) => {
     const t = e.touches?.[0];
     if (t) evadeFromPoint(t.clientX, t.clientY);
   }, { passive: true });
 
-  // ✅ Mobile: tap on NO -> move away as if your finger is "the mouse"
+  // Mobile: tap NO -> dodge + track attempt
   els.noBtn.addEventListener("click", (e) => {
-    track("no_attempt");
-
-    // Don't allow "No clicked" finale on mobile; instead, always dodge
     e.preventDefault();
     e.stopPropagation();
+    track("no_attempt");
 
     const r = els.noBtn.getBoundingClientRect();
-    // pretend pointer is on the button center (works on mobile)
     evadeFromPoint(r.left + r.width / 2, r.top + r.height / 2);
   });
 
-  // Extra: hover on desktop still dodges
   els.noBtn.addEventListener("mouseenter", () => {
     if (locked) return;
     safeRandomNo();
@@ -316,10 +312,17 @@ document.addEventListener("DOMContentLoaded", () => {
     els.overlay.setAttribute("aria-hidden", "true");
   }
 
-  if (els.closeOverlayBtn) els.closeOverlayBtn.addEventListener("click", closeOverlay);
+  if (els.closeOverlayBtn) els.closeOverlayBtn.addEventListener("click", () => {
+    closeOverlay();
+    track("date_overlay_closed");
+  });
+
   if (els.overlay) {
     els.overlay.addEventListener("click", (e) => {
-      if (e.target === els.overlay) closeOverlay();
+      if (e.target === els.overlay) {
+        closeOverlay();
+        track("date_overlay_closed");
+      }
     });
   }
 
@@ -350,10 +353,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function closeVideoAndShowItsADate() {
     closeVideoOnly();
+    track("video_closed");
     openOverlay();
   }
 
-  // Robust: close button always works
   document.addEventListener("click", (e) => {
     const closeBtn = e.target.closest("#skipVideoBtn");
     if (closeBtn) {
@@ -364,7 +367,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if (els.valentineVideo) {
-    els.valentineVideo.addEventListener("ended", closeVideoAndShowItsADate);
+    els.valentineVideo.addEventListener("ended", () => {
+      track("video_ended");
+      closeVideoAndShowItsADate();
+    });
   }
 
   if (els.videoOverlay) {
@@ -373,24 +379,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* -------------------- YES CLICK: hide NO + show video first -------------------- */
+  /* -------------------- YES CLICK -------------------- */
   els.yesBtn.addEventListener("click", () => {
     track("yes_click");
-
     locked = true;
 
-    // hide NO after YES
     els.noBtn.style.opacity = "0";
     els.noBtn.style.pointerEvents = "none";
-    setTimeout(() => {
-      els.noBtn.style.display = "none";
-    }, 180);
+    setTimeout(() => { els.noBtn.style.display = "none"; }, 180);
 
     if (els.hint) els.hint.textContent = "Best answer 💚";
     openVideo();
   });
 
-  /* -------------------- RESIZE SAFETY -------------------- */
   window.addEventListener("resize", () => {
     if (!locked) safeRandomNo();
   });
