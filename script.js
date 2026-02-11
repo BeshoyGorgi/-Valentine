@@ -1,5 +1,28 @@
 "use strict";
 
+function getSessionId() {
+  let id = localStorage.getItem("sid");
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+    localStorage.setItem("sid", id);
+  }
+  return id;
+}
+
+async function track(ev) {
+  try {
+    await fetch("/.netlify/functions/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: getSessionId(),
+        event: ev,
+        page: location.pathname
+      })
+    });
+  } catch {}
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const els = {
     // Letter / Envelope
@@ -233,6 +256,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ✅ Mobile: tap on NO -> move away as if your finger is "the mouse"
   els.noBtn.addEventListener("click", (e) => {
+    track("no_attempt");
+
     // Don't allow "No clicked" finale on mobile; instead, always dodge
     e.preventDefault();
     e.stopPropagation();
@@ -350,6 +375,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* -------------------- YES CLICK: hide NO + show video first -------------------- */
   els.yesBtn.addEventListener("click", () => {
+    track("yes_click");
+
     locked = true;
 
     // hide NO after YES
