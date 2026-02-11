@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Valentine Letter</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+
+  <main class="shell">
+    <!-- ENVELOPE / LETTER (START SCREEN) -->
+    <section class="envelope" id="envelope" aria-label="Valentine letter">
+      <div class="envelope__paper" id="paper" aria-hidden="true">
+        <div class="paper__content">
+          <div class="paper__tag">To: ... </div>
+          <div class="paper__title">A little note…</div>
+          <div class="paper__text">
+            Click to open.
+          </div>
+        </div>
+      </div>
+
+      <div class="envelope__body" aria-hidden="true"></div>
+      <div class="envelope__flap" aria-hidden="true"></div>
+
+      <button class="seal" id="sealBtn" type="button" aria-label="Open the letter">
+        <span class="seal__shine" aria-hidden="true"></span>
+        <span class="seal__heart" aria-hidden="true">❤</span>
+      </button>
+
+      <p class="envelope__hint" id="envelopeHint">Click the seal 💌</p>
+    </section>
+
+    <!-- QUESTION CARD (HIDDEN UNTIL OPEN) -->
+    <section class="card is-hidden" id="card" aria-label="Valentine card">
+      <header class="header">
+        <div class="pill">
+          <span class="pill__dot"></span>
+          Valentine Invite
+        </div>
+
+        <h1 class="title">Will you be my Valentine? 💘</h1>
+        <p class="subtitle">
+          I have one question… and only one correct answer.
+        </p>
+      </header>
+
+      <div class="stage" id="stage" role="group" aria-label="Answer buttons">
+        <div class="buttons" id="buttons">
+          <button class="btn btn--yes" id="yesBtn" type="button">
+            Yes 💚
+          </button>
+
+          <button class="btn btn--no" id="noBtn" type="button">
+            No 🙃
+          </button>
+        </div>
+
+        <!-- Success overlay -->
+        <div class="overlay" id="overlay" aria-hidden="true">
+          <div class="overlay__panel" role="dialog" aria-modal="true" aria-label="Success message">
+            <h2 class="overlay__title">Aywaaa Kedaaa!</h2>
+            <p class="overlay__text">It’s a date. I’ll text you the plan 😉</p>
+            <button class="btn btn--ghost" id="closeOverlayBtn" type="button">
+              Close
+            </button>
+          </div>
+
+          <div class="burst" id="burst" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- Video overlay (shown after clicking Close) -->
+      <div class="videoOverlay" id="videoOverlay" aria-hidden="true">
+        <div class="videoOverlay__panel" role="dialog" aria-modal="true" aria-label="Video">
+          <video class="videoOverlay__video" id="valentineVideo" controls playsinline>
+            <!-- ✅ Hier dein Video einfügen -->
+            <source src="videos/myvideo.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+
+          <button class="btn btn--ghost videoOverlay__close" id="skipVideoBtn" type="button">
+            Close video
+          </button>
+        </div>
+      </div>
+      
+
+
+      <footer class="footer">
+        Made with <span aria-hidden="true">💖</span>
+      </footer>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
