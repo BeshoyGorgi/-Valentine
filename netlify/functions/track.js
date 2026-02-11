@@ -1,4 +1,5 @@
 const fetch = require("node-fetch");
+console.log("SUPABASE_URL=", process.env.SUPABASE_URL);
 
 exports.handler = async (req) => {
   try {
