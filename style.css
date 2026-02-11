@@ -29,6 +29,12 @@ body{
   overflow:hidden;
 }
 
+body{
+  background: linear-gradient(135deg, var(--bg1), var(--bg2));
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .shell{
   min-height:100%;
   display:grid;
@@ -79,17 +85,36 @@ body{
   perspective: 900px;
 }
 
+/* --- FIX: responsive flap (no border-triangle) --- */
+.envelope{
+  width: min(520px, 94vw);   /* wichtig für Handy */
+  height: 340px;
+}
+
+.envelope__body{
+  height: 235px;
+}
+
+.envelope__flap{
+  width:100%;
+  height: min(190px, 32vw);          /* passt sich an */
+  position:absolute;
+  bottom: 48px;
+  transform-origin: top center;
+  transform: rotateX(0deg);
+  transition: transform .7s cubic-bezier(.2,.9,.2,1);
+  perspective: 900px;
+}
+
 .envelope__flap::before{
   content:"";
   position:absolute;
-  left:0; right:0; top:0;
-  margin:auto;
-  width:0; height:0;
-  border-left: 380px solid transparent;
-  border-right: 380px solid transparent;
-  border-top: 210px solid rgba(255,255,255,.88);
+  inset:0;
+  background: rgba(255,255,255,.88);
+  clip-path: polygon(0 0, 100% 0, 50% 100%); /* Dreieck, aber responsive */
   filter: drop-shadow(0 18px 30px rgba(0,0,0,.10));
 }
+
 
 /* paper that slides out */
 .envelope__paper{
