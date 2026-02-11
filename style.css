@@ -18,21 +18,20 @@
 
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
+
 body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
   color:var(--text);
-  background:
-    radial-gradient(1200px 700px at 18% 18%, rgba(255,255,255,.22), transparent 60%),
-    radial-gradient(900px 560px at 82% 28%, rgba(255,255,255,.16), transparent 55%),
-    linear-gradient(135deg, var(--bg1), var(--bg2));
-  overflow:hidden;
-}
 
-body{
+  /* ✅ only color/gradient background */
   background: linear-gradient(135deg, var(--bg1), var(--bg2));
   background-repeat: no-repeat;
   background-size: cover;
+
+  /* ✅ prevent black side area */
+  overflow-x:hidden;
+  width:100vw;
 }
 
 .shell{
@@ -43,19 +42,20 @@ body{
   gap:18px;
 }
 
-/* ------------------ Envelope ------------------ */
+/* ------------------ Envelope (CLEAN + RESPONSIVE) ------------------ */
 .envelope{
-  width:min(760px, 94vw);
-  height: 360px;
+  width: min(520px, 92vw);
+  height: 340px;
   position:relative;
   display:grid;
   place-items:center;
+  margin:0 auto;
 }
 
 .envelope__body{
   width:100%;
-  height: 260px;
-  border-radius: 24px;
+  height: 235px;
+  border-radius: 22px;
   background: rgba(255,255,255,.85);
   border: 1px solid rgba(255,255,255,.5);
   box-shadow: var(--shadow);
@@ -74,30 +74,10 @@ body{
     linear-gradient(180deg, rgba(255,255,255,.60), rgba(255,255,255,.35));
 }
 
+/* Flap (✅ no border-triangle, fully responsive) */
 .envelope__flap{
   width:100%;
-  height: 210px;
-  position:absolute;
-  bottom: 50px;
-  transform-origin: top center;
-  transform: rotateX(0deg);
-  transition: transform .7s cubic-bezier(.2,.9,.2,1);
-  perspective: 900px;
-}
-
-/* --- FIX: responsive flap (no border-triangle) --- */
-.envelope{
-  width: min(520px, 94vw);   /* wichtig für Handy */
-  height: 340px;
-}
-
-.envelope__body{
-  height: 235px;
-}
-
-.envelope__flap{
-  width:100%;
-  height: min(190px, 32vw);          /* passt sich an */
+  height: min(190px, 32vw);
   position:absolute;
   bottom: 48px;
   transform-origin: top center;
@@ -111,18 +91,17 @@ body{
   position:absolute;
   inset:0;
   background: rgba(255,255,255,.88);
-  clip-path: polygon(0 0, 100% 0, 50% 100%); /* Dreieck, aber responsive */
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
   filter: drop-shadow(0 18px 30px rgba(0,0,0,.10));
 }
 
-
-/* paper that slides out */
+/* Paper that slides out */
 .envelope__paper{
   position:absolute;
   width: 90%;
-  height: 260px;
-  bottom: 30px;
-  border-radius: 20px;
+  height: 235px;
+  bottom: 24px;
+  border-radius: 18px;
   background: rgba(255,255,255,.95);
   border: 1px solid rgba(90,75,106,.12);
   box-shadow: 0 18px 55px rgba(0,0,0,.16);
@@ -131,9 +110,8 @@ body{
   overflow:hidden;
 }
 
-.paper__content{
-  padding:20px 18px;
-}
+.paper__content{ padding:20px 18px; }
+
 .paper__tag{
   display:inline-block;
   font-weight:650;
@@ -143,43 +121,51 @@ body{
   border-radius:999px;
   background: rgba(107,76,255,.10);
 }
+
 .paper__title{
   margin:14px 0 6px;
-  font-size: 26px;
+  font-size: 24px;
   letter-spacing:-.4px;
 }
+
 .paper__text{
   margin:0;
   color: var(--muted);
   line-height: 1.5;
 }
 
+/* Seal */
 .seal{
   position:absolute;
-  bottom: 92px;
-  width:74px;
-  height:74px;
+  bottom: 86px;
+  width:64px;
+  height:64px;
   border-radius: 999px;
   border: 0;
   cursor:pointer;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.7), transparent 40%),
-              linear-gradient(135deg, var(--no1), var(--no2));
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.7), transparent 40%),
+    linear-gradient(135deg, var(--no1), var(--no2));
   box-shadow: 0 18px 40px rgba(0,0,0,.22);
   display:grid;
   place-items:center;
   transition: transform .18s ease, filter .18s ease;
   z-index:5;
 }
+
 .seal:hover{ transform: translateY(-2px) scale(1.03); }
+
 .seal:focus-visible{
   outline: 3px solid var(--ring);
   outline-offset: 4px;
 }
+
 .seal__heart{
-  font-size: 26px;
+  font-size: 22px;
   color: rgba(255,255,255,.95);
   text-shadow: 0 10px 20px rgba(0,0,0,.25);
 }
+
 .seal__shine{
   position:absolute;
   inset:0;
@@ -190,9 +176,9 @@ body{
 
 .envelope__hint{
   position:absolute;
-  bottom: 20px;
+  bottom: 14px;
   margin:0;
-  font-size:13px;
+  font-size:12px;
   color: rgba(255,255,255,.9);
   text-shadow: 0 12px 30px rgba(0,0,0,.25);
   user-select:none;
@@ -248,6 +234,7 @@ body{
   letter-spacing:.2px;
   user-select:none;
 }
+
 .pill__dot{
   width:10px;
   height:10px;
@@ -262,6 +249,7 @@ body{
   line-height:1.08;
   letter-spacing:-.6px;
 }
+
 .subtitle{
   margin:0 0 18px;
   color:var(--muted);
@@ -333,6 +321,7 @@ body{
   color: var(--text);
   box-shadow: none;
 }
+
 .btn--ghost:hover{ transform: translateY(-1px); }
 
 .hint{
@@ -354,7 +343,7 @@ body{
   user-select:none;
 }
 
-/* Overlay */
+/* Overlay ("It's a date") */
 .overlay{
   position:absolute;
   inset:0;
@@ -368,10 +357,12 @@ body{
   pointer-events:none;
   transition: opacity .22s ease;
 }
+
 .overlay.is-visible{
   opacity:1;
   pointer-events:auto;
 }
+
 .overlay__panel{
   width:min(520px, 90%);
   border-radius:22px;
@@ -381,11 +372,13 @@ body{
   padding:20px 18px;
   text-align:center;
 }
+
 .overlay__title{
   margin:0 0 10px;
   font-size: clamp(26px, 3.4vw, 38px);
   letter-spacing:-.4px;
 }
+
 .overlay__text{
   margin:0 0 14px;
   color:var(--muted);
@@ -405,7 +398,7 @@ body{
   z-index:1;
 }
 
-/* Burst hearts */
+/* Burst hearts (for overlay) */
 .burst{
   position:absolute;
   inset:0;
@@ -442,45 +435,6 @@ body{
   100%{ transform: translate(var(--dx), var(--dy)) rotate(45deg) scale(1.1); opacity:0; }
 }
 
-/* Floating hearts field */
-.heart-field{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  opacity:.55;
-  filter: blur(.2px);
-}
-.heart-field i{
-  position:absolute;
-  left:var(--lx);
-  top:110%;
-  width:14px;
-  height:14px;
-  transform: rotate(45deg) scale(var(--s));
-  background: rgba(255,255,255,.9);
-  border-radius:3px;
-  animation: floatUp var(--t) linear infinite;
-  opacity: var(--o);
-}
-.heart-field i::before,
-.heart-field i::after{
-  content:"";
-  position:absolute;
-  width:14px; height:14px;
-  background: inherit;
-  border-radius:50%;
-  left:-7px; top:0;
-}
-.heart-field i::after{ left:0; top:-7px; }
-
-@keyframes floatUp{
-  0%{ transform: translateY(0) rotate(45deg) scale(var(--s)); opacity:0; }
-  10%{ opacity:1; }
-  100%{ transform: translateY(-140vh) rotate(45deg) scale(var(--s)); opacity:0; }
-}
-
-
-
 /* -------- Video Overlay (shown first) -------- */
 .videoOverlay{
   position:absolute;
@@ -491,6 +445,7 @@ body{
   opacity:0;
   pointer-events:none;
   transition: opacity .22s ease;
+  z-index: 50;
 }
 
 .videoOverlay.is-visible{
@@ -505,6 +460,8 @@ body{
   border: 1px solid rgba(90,75,106,.12);
   box-shadow: 0 18px 55px rgba(0,0,0,.22);
   padding:14px;
+  position: relative;
+  z-index: 2;
 }
 
 .videoOverlay__video{
@@ -520,8 +477,6 @@ body{
   width:100%;
 }
 
-
-
 /* ------------------ Mobile / Responsive ------------------ */
 @media (max-width: 520px) {
   .shell{
@@ -531,32 +486,19 @@ body{
 
   /* Envelope */
   .envelope{
+    width: min(520px, 92vw);
     height: 330px;
   }
   .envelope__body{
     height: 230px;
     border-radius: 20px;
   }
-
-  /* Make flap triangle smaller on phones */
-  .envelope__flap{
-    height: 180px;
-    bottom: 48px;
-  }
-  .envelope__flap::before{
-    border-left: 260px solid transparent;
-    border-right: 260px solid transparent;
-    border-top: 180px solid rgba(255,255,255,.88);
-  }
-
   .envelope__paper{
-    height: 235px;
+    height: 230px;
     border-radius: 18px;
-    bottom: 24px;
+    bottom: 22px;
   }
-  .paper__title{
-    font-size: 22px;
-  }
+  .paper__title{ font-size: 22px; }
 
   .seal{
     width: 64px;
@@ -586,7 +528,7 @@ body{
   }
 
   .stage{
-    height: 210px; /* more room for moving NO button */
+    height: 210px;
     border-radius: 18px;
   }
 
@@ -603,19 +545,17 @@ body{
     border-radius: 14px;
   }
 
-  /* Keep NO button from going off-screen too much */
   .btn--no{
     min-width: 150px;
   }
 
   .hint{
     left: 14px;
-    bottom: 12px;
     right: 14px;
+    bottom: 12px;
     font-size: 12px;
   }
 
-  /* Overlays */
   .overlay__panel{
     width: min(520px, 92%);
     border-radius: 18px;
@@ -645,7 +585,5 @@ body{
 
 /* Fix for mobile browser address-bar height changes */
 @supports (height: 100svh) {
-  .shell{
-    min-height: 100svh;
-  }
+  .shell{ min-height: 100svh; }
 }
