@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Video (shown FIRST after YES)
     videoOverlay: document.getElementById("videoOverlay"),
     valentineVideo: document.getElementById("valentineVideo"),
-    skipVideoBtn: document.getElementById("skipVideoBtn"), // this is your "Close" button on the video
+    skipVideoBtn: document.getElementById("skipVideoBtn"),
 
     // Success overlay ("It's a date..." shown AFTER video close)
     overlay: document.getElementById("overlay"),
@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
   /* -------------------- OPEN LETTER -> SHOW CARD -------------------- */
   function showCard() {
     if (!els.card) return;
-
     els.card.classList.remove("is-hidden");
 
     if (els.envelope) {
@@ -38,8 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => (els.envelope.style.display = "none"), 360);
     }
 
+    // Ensure NO starts in a safe position (not on top of YES)
     setTimeout(() => {
-      if (els.noBtn && els.stage) randomNo();
+      safeRandomNo();
     }, 80);
   }
 
@@ -51,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* -------------------- REQUIRED ELEMENTS CHECK -------------------- */
   if (!els.stage || !els.noBtn || !els.yesBtn || !els.card) {
     console.error("Missing required IDs: card, stage, yesBtn, noBtn");
     return;
@@ -59,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let locked = false;
 
-  /* -------------------- YES GROWS (SLOW + SMOOTH) WHILE CHASING NO -------------------- */
+  /* -------------------- YES grows slowly while chasing NO -------------------- */
   let yesScale = 1;
   let yesTargetScale = 1;
   let lastMoveAt = 0;
@@ -96,15 +95,40 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   requestAnimationFrame(tick);
 
-  /* -------------------- NO BUTTON POSITIONING -------------------- */
+  /* -------------------- Helpers: geometry & overlap -------------------- */
   function clamp(v, min, max) {
     return Math.min(Math.max(v, min), max);
   }
 
+  function rectsOverlap(a, b, pad = 0) {
+    return !(
+      a.right + pad < b.left ||
+      a.left - pad > b.right ||
+      a.bottom + pad < b.top ||
+      a.top - pad > b.bottom
+    );
+  }
+
+  function getRectInStage(el) {
+    const s = els.stage.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return {
+      left: r.left - s.left,
+      top: r.top - s.top,
+      right: r.right - s.left,
+      bottom: r.bottom - s.top,
+      width: r.width,
+      height: r.height
+    };
+  }
+
+  /* -------------------- Place NO safely (never on YES) -------------------- */
+  const SAFE_PAD = 16; // extra distance between yes/no
+
   function placeNo(x, y) {
     const stageRect = els.stage.getBoundingClientRect();
     const btnW = Math.max(els.noBtn.offsetWidth, 120);
-    const btnH = Math.max(els.noBtn.offsetHeight, 48);
+    const btnH = Math.max(els.noBtn.offsetHeight, 44);
 
     const minX = 10, minY = 10;
     const maxX = stageRect.width - btnW - 10;
@@ -115,23 +139,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
     els.noBtn.style.left = `${nx}px`;
     els.noBtn.style.top = `${ny}px`;
-    els.noBtn.style.transform = "translate(0,0)";
+    els.noBtn.style.transform = "translate(0,0) scale(0.92)";
   }
 
-  function randomNo() {
+  function safeRandomNo() {
     const stageRect = els.stage.getBoundingClientRect();
-    const btnW = Math.max(els.noBtn.offsetWidth, 120);
-    const btnH = Math.max(els.noBtn.offsetHeight, 48);
+    const yes = getRectInStage(els.yesBtn);
 
-    const x = 10 + Math.random() * (stageRect.width - btnW - 20);
-    const y = 10 + Math.random() * (stageRect.height - btnH - 20);
-    placeNo(x, y);
+    const btnW = Math.max(els.noBtn.offsetWidth, 120);
+    const btnH = Math.max(els.noBtn.offsetHeight, 44);
+
+    // Try several times to find a position not overlapping YES
+    for (let i = 0; i < 40; i++) {
+      const x = 10 + Math.random() * (stageRect.width - btnW - 20);
+      const y = 10 + Math.random() * (stageRect.height - btnH - 20);
+
+      const noCandidate = {
+        left: x,
+        top: y,
+        right: x + btnW,
+        bottom: y + btnH
+      };
+
+      if (!rectsOverlap(noCandidate, yes, SAFE_PAD)) {
+        placeNo(x, y);
+        return;
+      }
+    }
+
+    // Fallback: force it to a corner far from YES
+    placeNo(10, stageRect.height - btnH - 10);
   }
 
-  randomNo();
+  // Initial safe position (in case card is visible immediately)
+  safeRandomNo();
 
-  /* -------------------- EVADE LOGIC -------------------- */
-  function evade(clientX, clientY) {
+  /* -------------------- Evade logic (mouse + touch + tap on NO) -------------------- */
+  function safePlaceNear(nx, ny, approxW, approxH) {
+    // Place and ensure it doesn't overlap YES. If overlap -> random safe position.
+    placeNo(nx, ny);
+
+    // After placing, verify overlap (using real rects)
+    const noR = getRectInStage(els.noBtn);
+    const yesR = getRectInStage(els.yesBtn);
+
+    if (rectsOverlap(noR, yesR, SAFE_PAD)) {
+      safeRandomNo();
+    }
+  }
+
+  function evadeFromPoint(clientX, clientY) {
     if (locked) return;
 
     const stageRect = els.stage.getBoundingClientRect();
@@ -140,48 +197,57 @@ document.addEventListener("DOMContentLoaded", () => {
     const mx = clientX - stageRect.left;
     const my = clientY - stageRect.top;
 
-    const cx = noRect.left - stageRect.left + noRect.width / 2;
-    const cy = noRect.top - stageRect.top + noRect.height / 2;
+    const cx = (noRect.left - stageRect.left) + noRect.width / 2;
+    const cy = (noRect.top - stageRect.top) + noRect.height / 2;
 
     const dx = mx - cx;
     const dy = my - cy;
     const dist = Math.hypot(dx, dy);
 
-    const dangerRadius = 120;
+    const dangerRadius = 140; // a bit larger for touch
     if (dist < dangerRadius) {
-      const push = 150;
+      const push = 170;
       const angle = Math.atan2(dy, dx) + (Math.random() * 0.9 - 0.45);
 
-      const nx = cx - Math.cos(angle) * push + (Math.random() * 60 - 30);
-      const ny = cy - Math.sin(angle) * push + (Math.random() * 60 - 30);
+      const targetX = cx - Math.cos(angle) * push + (Math.random() * 60 - 30);
+      const targetY = cy - Math.sin(angle) * push + (Math.random() * 60 - 30);
 
-      placeNo(nx - noRect.width / 2, ny - noRect.height / 2);
+      const approxW = Math.max(els.noBtn.offsetWidth, 120);
+      const approxH = Math.max(els.noBtn.offsetHeight, 44);
+
+      safePlaceNear(targetX - approxW / 2, targetY - approxH / 2, approxW, approxH);
 
       lastMoveAt = performance.now();
       boostYesBecauseChase();
     }
   }
 
-  els.stage.addEventListener("mousemove", (e) => evade(e.clientX, e.clientY));
+  // Desktop mouse
+  els.stage.addEventListener("mousemove", (e) => evadeFromPoint(e.clientX, e.clientY));
+
+  // Touch (finger in stage)
   els.stage.addEventListener("touchstart", (e) => {
     const t = e.touches?.[0];
-    if (t) evade(t.clientX, t.clientY);
+    if (t) evadeFromPoint(t.clientX, t.clientY);
   }, { passive: true });
 
-  els.noBtn.addEventListener("mouseenter", () => {
-    if (locked) return;
-    randomNo();
-    lastMoveAt = performance.now();
-    boostYesBecauseChase();
+  // ✅ Mobile: tap on NO -> move away as if your finger is "the mouse"
+  els.noBtn.addEventListener("click", (e) => {
+    // Don't allow "No clicked" finale on mobile; instead, always dodge
+    e.preventDefault();
+    e.stopPropagation();
+
+    const r = els.noBtn.getBoundingClientRect();
+    // pretend pointer is on the button center (works on mobile)
+    evadeFromPoint(r.left + r.width / 2, r.top + r.height / 2);
   });
 
-  /* -------------------- IF NO IS CLICKED (RARE): FINALE -------------------- */
-  els.noBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    locked = true;
-    els.card.classList.add("finale");
-    if (els.hint) els.hint.textContent = "Nice try 😅 But… YES wins.";
-    els.yesBtn.focus();
+  // Extra: hover on desktop still dodges
+  els.noBtn.addEventListener("mouseenter", () => {
+    if (locked) return;
+    safeRandomNo();
+    lastMoveAt = performance.now();
+    boostYesBecauseChase();
   });
 
   /* -------------------- SUCCESS OVERLAY (IT'S A DATE) -------------------- */
@@ -235,7 +301,6 @@ document.addEventListener("DOMContentLoaded", () => {
   /* -------------------- VIDEO (SHOWN FIRST AFTER YES) -------------------- */
   function openVideo() {
     if (!els.videoOverlay) {
-      // fallback
       openOverlay();
       return;
     }
@@ -251,41 +316,39 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function closeVideoOnly() {
-    if (!els.videoOverlay) return;
-
-    els.videoOverlay.classList.remove("is-visible");
-    els.videoOverlay.setAttribute("aria-hidden", "true");
-
-    if (els.valentineVideo) {
-      els.valentineVideo.pause();
+    if (els.videoOverlay) {
+      els.videoOverlay.classList.remove("is-visible");
+      els.videoOverlay.setAttribute("aria-hidden", "true");
     }
+    if (els.valentineVideo) els.valentineVideo.pause();
   }
 
-  // ✅ This is what you want:
-  // When clicking the video's "Close" button -> hide video -> show "It's a date..."
   function closeVideoAndShowItsADate() {
     closeVideoOnly();
     openOverlay();
   }
 
-  // Video Close/Continue button
-  if (els.skipVideoBtn) {
-    els.skipVideoBtn.addEventListener("click", closeVideoAndShowItsADate);
-  }
+  // Robust: close button always works
+  document.addEventListener("click", (e) => {
+    const closeBtn = e.target.closest("#skipVideoBtn");
+    if (closeBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeVideoAndShowItsADate();
+    }
+  });
 
-  // Also when the video ends -> show "It's a date..."
   if (els.valentineVideo) {
     els.valentineVideo.addEventListener("ended", closeVideoAndShowItsADate);
   }
 
-  // click outside video panel -> same behavior
   if (els.videoOverlay) {
     els.videoOverlay.addEventListener("click", (e) => {
       if (e.target === els.videoOverlay) closeVideoAndShowItsADate();
     });
   }
 
-  /* -------------------- YES CLICK: HIDE NO + SHOW VIDEO FIRST -------------------- */
+  /* -------------------- YES CLICK: hide NO + show video first -------------------- */
   els.yesBtn.addEventListener("click", () => {
     locked = true;
 
@@ -297,13 +360,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 180);
 
     if (els.hint) els.hint.textContent = "Best answer 💚";
-
-    // First show video
     openVideo();
   });
 
   /* -------------------- RESIZE SAFETY -------------------- */
   window.addEventListener("resize", () => {
-    if (!locked) randomNo();
+    if (!locked) safeRandomNo();
   });
 });
