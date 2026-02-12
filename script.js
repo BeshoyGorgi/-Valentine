@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const YES_MAX_SCALE = 2.4;
   const YES_GROW_PER_MOVE = 0.05;
-  const YES_DECAY_PER_SEC = 0.01;
+  const YES_DECAY_PER_SEC = 0.055;
 
   function applyYesScale() {
     yesScale += (yesTargetScale - yesScale) * 0.06;
@@ -111,6 +111,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (yesTargetScale > 1.9) els.hint.textContent = "You know you want to click YES 😌💚";
     }
   }
+
+  function boostYes(times = 1) {
+  for (let i = 0; i < times; i++) boostYesBecauseChase(); // ✅ nutzt YES_GROW_PER_MOVE
+  lastMoveAt = performance.now();
+}
+
 
   function tick() {
     if (!locked) {
@@ -256,13 +262,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Mobile: tap NO -> dodge + track attempt
   els.noBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    track("no_attempt");
+  e.preventDefault();
+  e.stopPropagation();
+  track("no_attempt");
 
-    const r = els.noBtn.getBoundingClientRect();
-    evadeFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-  });
+  // ✅ same constants: YES_GROW_PER_MOVE is used here too
+  boostYes(6); // 4 = mild, 6 = nice, 10 = crazy fast
+
+  const r = els.noBtn.getBoundingClientRect();
+  evadeFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+});
+
 
   els.noBtn.addEventListener("mouseenter", () => {
     if (locked) return;
