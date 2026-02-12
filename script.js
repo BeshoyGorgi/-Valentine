@@ -267,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
   track("no_attempt");
 
   // ✅ same constants: YES_GROW_PER_MOVE is used here too
-  boostYes(20); // 4 = mild, 6 = nice, 10 = crazy fast
+  boostYes(50); // 4 = mild, 6 = nice, 10 = crazy fast
 
   const r = els.noBtn.getBoundingClientRect();
   evadeFromPoint(r.left + r.width / 2, r.top + r.height / 2);
