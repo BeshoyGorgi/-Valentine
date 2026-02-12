@@ -94,9 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let yesTargetScale = 1;
   let lastMoveAt = 0;
 
-  const YES_MAX_SCALE = 2.2;
-  const YES_GROW_PER_MOVE = 0.012;
-  const YES_DECAY_PER_SEC = 0.045;
+  const YES_MAX_SCALE = 2.4;
+  const YES_GROW_PER_MOVE = 0.05;
+  const YES_DECAY_PER_SEC = 0.01;
 
   function applyYesScale() {
     yesScale += (yesTargetScale - yesScale) * 0.06;
