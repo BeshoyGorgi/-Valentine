@@ -522,10 +522,11 @@ body{
 
   /* Buttons untereinander und unten */
   .buttons{
+     display: flex;
     flex-direction: column;
-    justify-content: flex-end;   /* nach unten */
     align-items: center;
-    gap: 14px;
+    justify-content: center;   /* ✅ Mitte */
+    gap: 12px;
     padding: 16px;
   }
 
@@ -538,13 +539,14 @@ body{
   /* NO etwas kleiner */
   .btn--no{
     transform: scale(0.85);
+    transform-origin: center;
   }
 
   .btn{
     width: 100%;
-    max-width: 240px;
-    padding: 14px 16px;
-    font-size: 16px;
+    max-width: 210px;          /* ✅ kleiner */
+    padding: 12px 14px;        /* ✅ kleiner */
+    font-size: 15px;           /* ✅ kleiner */
     border-radius: 14px;
   }
 
